@@ -26,11 +26,11 @@ func (s *AppServer) HandleHome(w http.ResponseWriter, r *http.Request) {
 		<hr>
 		{{range .}}
 			<div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px;">
-				<h3>{{.Original.Title}}</h3>
-				<p><strong>Ticker:</strong> {{range .Ticker}}{{.}} {{end}} | <strong>Sentiment:</strong> {{.Sentiment}}</p>
-				<p><em>Riassunto: {{.Summary}}</em></p>
-				<p style="color: #d9534f;"><strong>Impatto previsto:</strong> {{.Impact}}</p>
-				<small>Analizzato il: {{.AnalysisAt.Format "15:04:05"}}</small>
+				<h3>{{.Article.Title}}</h3>
+				<p><strong>Ticker:</strong> {{.Analysis.Tickers}} | <strong>Sentiment:</strong> {{.Analysis.Sentiment}}</p>
+				<p><em>Riassunto: {{.Analysis.Summary}}</em></p>
+				<p style="color: #d9534f;"><strong>Impatto previsto:</strong> {{.Analysis.Impact}}</p>
+				<small>Analizzato il: {{.Analysis.AnalyzedAt.Format "15:04:05"}}</small>
 			</div>
 		{{else}}
 			<p>no analyze available...</p>
@@ -38,7 +38,7 @@ func (s *AppServer) HandleHome(w http.ResponseWriter, r *http.Request) {
 	</body>
 	</html>`
 	tmpl := template.Must(template.New("home").Parse(htmlPage))
-	recentAnalyses, err := s.store.GetRecentAnalyses(r.Context(), 10)
+	recentAnalyses, err := s.store.GetRecentAnalyses(r.Context(), 30)
 	if err != nil {
 		http.Error(w, "Error inside the server", http.StatusInternalServerError)
 		return

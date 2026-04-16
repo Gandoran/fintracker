@@ -1,10 +1,6 @@
 package ollama
 
-const SystemPromptFinancial = `Sei un analista finanziario esperto. Analizza l'articolo e rispondi ESCLUSIVAMENTE in formato JSON.
-Articolo:
-Titolo: %s
-Contenuto: %s
-
+const SystemPromptFinancial = `Sei un analista finanziario esperto. Rispondi ESCLUSIVAMENTE in formato JSON.
 Il tuo JSON deve avere questa struttura esatta:
 {
   "tickers": ["$SIMBOLO"],
