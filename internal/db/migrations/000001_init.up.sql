@@ -1,0 +1,20 @@
+CREATE TABLE articles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    link TEXT NOT NULL UNIQUE,
+    content TEXT NOT NULL,
+    source TEXT NOT NULL,
+    published_at DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE analyses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    article_id INTEGER NOT NULL UNIQUE,
+    summary TEXT NOT NULL,
+    sentiment TEXT NOT NULL,
+    impact TEXT NOT NULL,
+    tickers TEXT NOT NULL,
+    analyzed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+);

@@ -3,26 +3,18 @@ package web
 import (
 	"html/template"
 	"net/http"
-	"sync"
 
-	"fintracker/internal/models"
+	"fintracker/internal/db"
 )
 
 type AppServer struct {
-	results []models.Analysis
-	mu      sync.RWMutex
+	store *db.Store
 }
 
-func NewAppServer() *AppServer {
+func NewAppServer(store *db.Store) *AppServer {
 	return &AppServer{
-		results: make([]models.Analysis, 0),
+		store: store,
 	}
-}
-
-func (s *AppServer) AddResult(a models.Analysis) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.results = append([]models.Analysis{a}, s.results...)
 }
 
 func (s *AppServer) HandleHome(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +38,10 @@ func (s *AppServer) HandleHome(w http.ResponseWriter, r *http.Request) {
 	</body>
 	</html>`
 	tmpl := template.Must(template.New("home").Parse(htmlPage))
-	s.mu.RLock() //one article write per time
-	defer s.mu.RUnlock()
-	tmpl.Execute(w, s.results)
+	recentAnalyses, err := s.store.GetRecentAnalyses(r.Context(), 10)
+	if err != nil {
+		http.Error(w, "Error inside the server", http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, recentAnalyses)
 }

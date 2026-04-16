@@ -6,5 +6,5 @@ llm:
 scraper:
   interval_minutes: 15
   feeds:
-    - "https://feeds.finance.yahoo.com/rss/2.0/headline?s=AAPL,TSLA,MSFT,NVDA"
-    - "https://www.ilsole24ore.com/rss/finanza-e-mercati.xml"
+    - "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"
+    - "https://finance.yahoo.com/news/rssindex"
