@@ -15,7 +15,7 @@ import (
 	"fintracker/internal/pipeline"
 	"fintracker/internal/scraper"
 	"fintracker/internal/search"
-	"fintracker/internal/web"
+	"fintracker/web"
 )
 
 func main() {
@@ -35,8 +35,8 @@ func main() {
 	ai := ollama.NewClient(cfg.LLM.URL, cfg.LLM.Model, cfg.LLM.Temperature, tavilyClient)
 	appServer := web.NewAppServer(store)
 	worker := pipeline.NewWorker(cfg, fetcher, ai, store)
-	http.HandleFunc("/", appServer.HandleHome)
-	srv := &http.Server{Addr: ":8080"}
+	mux := appServer.RegisterRoutes()
+	srv := &http.Server{Addr: ":8080", Handler: mux}
 	go func() {
 		log.Println("FinTracker Active on http://localhost:8080")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

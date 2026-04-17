@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -107,6 +108,67 @@ func (q *Queries) GetRecentAnalyses(ctx context.Context, limit int64) ([]GetRece
 	var items []GetRecentAnalysesRow
 	for rows.Next() {
 		var i GetRecentAnalysesRow
+		if err := rows.Scan(
+			&i.Analysis.ID,
+			&i.Analysis.ArticleID,
+			&i.Analysis.Summary,
+			&i.Analysis.Sentiment,
+			&i.Analysis.Impact,
+			&i.Analysis.Tickers,
+			&i.Analysis.ReferenceLinks,
+			&i.Analysis.AnalyzedAt,
+			&i.Article.ID,
+			&i.Article.Title,
+			&i.Article.Link,
+			&i.Article.Content,
+			&i.Article.Source,
+			&i.Article.PublishedAt,
+			&i.Article.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchAnalyses = `-- name: SearchAnalyses :many
+SELECT 
+    analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.reference_links, analyses.analyzed_at, 
+    articles.id, articles.title, articles.link, articles.content, articles.source, articles.published_at, articles.created_at
+FROM analyses
+JOIN articles ON analyses.article_id = articles.id
+WHERE articles.title LIKE '%' || ? || '%' 
+   OR analyses.tickers LIKE '%' || ? || '%'
+ORDER BY analyses.analyzed_at DESC
+LIMIT 30
+`
+
+type SearchAnalysesParams struct {
+	Column1 sql.NullString `json:"column_1"`
+	Column2 sql.NullString `json:"column_2"`
+}
+
+type SearchAnalysesRow struct {
+	Analysis Analysis `json:"analysis"`
+	Article  Article  `json:"article"`
+}
+
+func (q *Queries) SearchAnalyses(ctx context.Context, arg SearchAnalysesParams) ([]SearchAnalysesRow, error) {
+	rows, err := q.db.QueryContext(ctx, searchAnalyses, arg.Column1, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchAnalysesRow
+	for rows.Next() {
+		var i SearchAnalysesRow
 		if err := rows.Scan(
 			&i.Analysis.ID,
 			&i.Analysis.ArticleID,

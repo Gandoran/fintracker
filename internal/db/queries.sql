@@ -16,3 +16,14 @@ FROM analyses
 JOIN articles ON analyses.article_id = articles.id
 ORDER BY analyses.analyzed_at DESC
 LIMIT ?;
+
+-- name: SearchAnalyses :many
+SELECT 
+    sqlc.embed(analyses), 
+    sqlc.embed(articles)
+FROM analyses
+JOIN articles ON analyses.article_id = articles.id
+WHERE articles.title LIKE '%' || ? || '%' 
+   OR analyses.tickers LIKE '%' || ? || '%'
+ORDER BY analyses.analyzed_at DESC
+LIMIT 30;
