@@ -1,0 +1,1 @@
+ALTER TABLE analyses ADD COLUMN reliability_score INTEGER NOT NULL DEFAULT 5;

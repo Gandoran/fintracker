@@ -34,6 +34,19 @@ const homeHTML = `
 					<span class="font-semibold {{if eq .Analysis.Sentiment "Bullish"}}text-green-600{{else if eq .Analysis.Sentiment "Bearish"}}text-red-600{{else}}text-slate-500{{end}}">
 						{{.Analysis.Sentiment}}
 					</span>
+					{{if ge .Analysis.ReliabilityScore 8}}
+                        <span class="flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-bold text-xs shadow-sm" title="Alta Affidabilità (Fatti ufficiali/Confermati)">
+                            🍅 {{.Analysis.ReliabilityScore}}/10
+                        </span>
+                    {{else if ge .Analysis.ReliabilityScore 5}}
+                        <span class="flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md font-bold text-xs shadow-sm" title="Affidabilità Media (Speculazioni basate su dati)">
+                            🤔 {{.Analysis.ReliabilityScore}}/10
+                        </span>
+                    {{else}}
+                        <span class="flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-md font-bold text-xs shadow-sm" title="Bassa Affidabilità (Rumor/Fonti non verificate)">
+                            🤢 {{.Analysis.ReliabilityScore}}/10
+                        </span>
+                    {{end}}
 				</div>
 				<p class="text-slate-600 mb-4 text-sm">{{.Analysis.Summary}}</p>
 				<div class="bg-slate-50 border-l-4 border-blue-500 p-3 rounded-r-lg mb-4">

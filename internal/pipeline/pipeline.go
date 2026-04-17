@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"fintracker/internal/models"
 	"fintracker/internal/ollama"
 	"fintracker/internal/scraper"
+	"fintracker/notifier"
 )
 
 type Worker struct {
@@ -18,10 +20,11 @@ type Worker struct {
 	fetcher *scraper.Fetcher
 	ai      *ollama.Client
 	store   *db.Store
+	bot     *notifier.TelegramBot
 }
 
-func NewWorker(cfg *config.Config, f *scraper.Fetcher, ai *ollama.Client, store *db.Store) *Worker {
-	return &Worker{cfg: cfg, fetcher: f, ai: ai, store: store}
+func NewWorker(cfg *config.Config, f *scraper.Fetcher, ai *ollama.Client, store *db.Store, bot *notifier.TelegramBot) *Worker {
+	return &Worker{cfg: cfg, fetcher: f, ai: ai, store: store, bot: bot}
 }
 
 func (w *Worker) Start() {
@@ -66,16 +69,39 @@ func (w *Worker) processSingleArticle(art models.Article) {
 		return
 	}
 	_, err = w.store.CreateAnalysis(context.Background(), db.CreateAnalysisParams{
-		ArticleID:      savedArticle.ID,
-		Summary:        analysis.Summary,
-		Sentiment:      analysis.Sentiment,
-		Impact:         analysis.Impact,
-		Tickers:        strings.Join(analysis.Ticker, ", "),
-		ReferenceLinks: strings.Join(analysis.ReferenceLinks, ","),
+		ArticleID:        savedArticle.ID,
+		Summary:          analysis.Summary,
+		Sentiment:        analysis.Sentiment,
+		Impact:           analysis.Impact,
+		Tickers:          strings.Join(analysis.Ticker, ", "),
+		ReferenceLinks:   strings.Join(analysis.ReferenceLinks, ","),
+		ReliabilityScore: int64(analysis.Reliability),
 	})
 	if err != nil {
 		log.Printf("Error saving on DB: %v", err)
 	} else {
 		log.Println("Analys Saved")
+	}
+}
+
+func (w *Worker) SendTelegramNotify(analysis *models.Analysis, art *models.Article) {
+	if analysis.Sentiment != "Neutral" && analysis.Reliability >= 0 {
+		icon := "📈"
+		if analysis.Sentiment == "Bearish" {
+			icon = "📉"
+		}
+		msg := fmt.Sprintf(
+			"🚨 <b>Lumina AI Alert</b> %s\n\n"+
+				"<b>Aziende:</b> %s\n"+
+				"<b>Sentiment:</b> %s\n"+
+				"<b>Affidabilità:</b> %d/10\n\n"+
+				"<b>Riassunto:</b>\n%s\n\n"+
+				"<a href=\"%s\">📰 Leggi articolo originale</a>",
+			icon, strings.Join(analysis.Ticker, ", "), analysis.Sentiment, analysis.Reliability, analysis.Summary, art.Link,
+		)
+		err := w.bot.SendAlert(msg)
+		if err != nil {
+			log.Printf("Error on Telegram: %v", err)
+		}
 	}
 }

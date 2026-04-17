@@ -25,6 +25,11 @@ type Config struct {
 		Enabled      bool `yaml:"enabled"`
 		TavilyAPIKey string
 	} `yaml:"search"`
+
+	Telegram struct {
+		BotToken string
+		ChatID   string
+	}
 }
 
 func Load(filepath string) (*Config, error) {
@@ -37,6 +42,13 @@ func Load(filepath string) (*Config, error) {
 	if err := yaml.Unmarshal(fileBytes, &cfg); err != nil {
 		return nil, fmt.Errorf("errore nel decodificare lo YAML: %v", err)
 	}
-	cfg.Search.TavilyAPIKey = os.Getenv("TAVILY_API_KEY")
+	DotEnvLoad(&cfg)
 	return &cfg, nil
+}
+
+func DotEnvLoad(cfg *Config) *Config {
+	cfg.Search.TavilyAPIKey = os.Getenv("TAVILY_API_KEY")
+	cfg.Telegram.BotToken = os.Getenv("TELEGRAM_BOT_TOKEN")
+	cfg.Telegram.ChatID = os.Getenv("TELEGRAM_CHAT_ID")
+	return cfg
 }

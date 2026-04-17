@@ -15,6 +15,7 @@ import (
 	"fintracker/internal/pipeline"
 	"fintracker/internal/scraper"
 	"fintracker/internal/search"
+	"fintracker/notifier"
 	"fintracker/web"
 )
 
@@ -34,9 +35,10 @@ func main() {
 	}
 	ai := ollama.NewClient(cfg.LLM.URL, cfg.LLM.Model, cfg.LLM.Temperature, tavilyClient)
 	appServer := web.NewAppServer(store)
-	worker := pipeline.NewWorker(cfg, fetcher, ai, store)
 	mux := appServer.RegisterRoutes()
 	srv := &http.Server{Addr: ":8080", Handler: mux}
+	telegramBot := notifier.NewTelegramBot(cfg.Telegram.BotToken, cfg.Telegram.ChatID)
+	worker := pipeline.NewWorker(cfg, fetcher, ai, store, telegramBot)
 	go func() {
 		log.Println("FinTracker Active on http://localhost:8080")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
