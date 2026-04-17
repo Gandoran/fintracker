@@ -7,19 +7,25 @@ import (
 	"net/http"
 )
 
+type Searcher interface {
+	Search(query string) (string, []string)
+}
+
 type Client struct {
 	baseURL     string
 	modelName   string
 	temperature float32
 	httpClient  *http.Client
+	searcher    Searcher
 }
 
-func NewClient(url, model string, temp float32) *Client {
+func NewClient(url, model string, temp float32, searcher Searcher) *Client {
 	return &Client{
 		baseURL:     url,
 		modelName:   model,
 		temperature: temp,
 		httpClient:  &http.Client{},
+		searcher:    searcher,
 	}
 }
 

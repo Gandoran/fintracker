@@ -10,13 +10,14 @@ import (
 )
 
 type Analysis struct {
-	ID         int64        `json:"id"`
-	ArticleID  int64        `json:"article_id"`
-	Summary    string       `json:"summary"`
-	Sentiment  string       `json:"sentiment"`
-	Impact     string       `json:"impact"`
-	Tickers    string       `json:"tickers"`
-	AnalyzedAt sql.NullTime `json:"analyzed_at"`
+	ID             int64        `json:"id"`
+	ArticleID      int64        `json:"article_id"`
+	Summary        string       `json:"summary"`
+	Sentiment      string       `json:"sentiment"`
+	Impact         string       `json:"impact"`
+	Tickers        string       `json:"tickers"`
+	ReferenceLinks string       `json:"reference_links"`
+	AnalyzedAt     sql.NullTime `json:"analyzed_at"`
 }
 
 type Article struct {

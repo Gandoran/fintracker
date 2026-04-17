@@ -11,17 +11,18 @@ import (
 )
 
 const createAnalysis = `-- name: CreateAnalysis :one
-INSERT INTO analyses (article_id, summary, sentiment, impact, tickers)
-VALUES (?, ?, ?, ?, ?)
-RETURNING id, article_id, summary, sentiment, impact, tickers, analyzed_at
+INSERT INTO analyses (article_id, summary, sentiment, impact, tickers, reference_links)
+VALUES (?, ?, ?, ?, ?, ?)
+RETURNING id, article_id, summary, sentiment, impact, tickers, reference_links, analyzed_at
 `
 
 type CreateAnalysisParams struct {
-	ArticleID int64  `json:"article_id"`
-	Summary   string `json:"summary"`
-	Sentiment string `json:"sentiment"`
-	Impact    string `json:"impact"`
-	Tickers   string `json:"tickers"`
+	ArticleID      int64  `json:"article_id"`
+	Summary        string `json:"summary"`
+	Sentiment      string `json:"sentiment"`
+	Impact         string `json:"impact"`
+	Tickers        string `json:"tickers"`
+	ReferenceLinks string `json:"reference_links"`
 }
 
 func (q *Queries) CreateAnalysis(ctx context.Context, arg CreateAnalysisParams) (Analysis, error) {
@@ -31,6 +32,7 @@ func (q *Queries) CreateAnalysis(ctx context.Context, arg CreateAnalysisParams) 
 		arg.Sentiment,
 		arg.Impact,
 		arg.Tickers,
+		arg.ReferenceLinks,
 	)
 	var i Analysis
 	err := row.Scan(
@@ -40,6 +42,7 @@ func (q *Queries) CreateAnalysis(ctx context.Context, arg CreateAnalysisParams) 
 		&i.Sentiment,
 		&i.Impact,
 		&i.Tickers,
+		&i.ReferenceLinks,
 		&i.AnalyzedAt,
 	)
 	return i, err
@@ -82,7 +85,7 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 
 const getRecentAnalyses = `-- name: GetRecentAnalyses :many
 SELECT 
-    analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.analyzed_at, 
+    analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.reference_links, analyses.analyzed_at, 
     articles.id, articles.title, articles.link, articles.content, articles.source, articles.published_at, articles.created_at
 FROM analyses
 JOIN articles ON analyses.article_id = articles.id
@@ -111,6 +114,7 @@ func (q *Queries) GetRecentAnalyses(ctx context.Context, limit int64) ([]GetRece
 			&i.Analysis.Sentiment,
 			&i.Analysis.Impact,
 			&i.Analysis.Tickers,
+			&i.Analysis.ReferenceLinks,
 			&i.Analysis.AnalyzedAt,
 			&i.Article.ID,
 			&i.Article.Title,

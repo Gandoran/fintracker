@@ -22,6 +22,7 @@ func (c *Client) buildInitialMessages(art models.Article) []Message {
 }
 
 func (c *Client) processChatLoop(ctx context.Context, msgs []Message, art models.Article) (*models.Analysis, error) {
+	var allFoundLinks []string
 	for {
 		req := c.buildChatRequest(msgs)
 		resp, err := c.doChatRequest(ctx, req)
@@ -29,43 +30,53 @@ func (c *Client) processChatLoop(ctx context.Context, msgs []Message, art models
 			return nil, err
 		}
 		if len(resp.Message.ToolCalls) > 0 {
-			msgs = c.handleToolCalls(msgs, resp.Message)
+			//tool called by ollama model
+			var newLinks []string
+			msgs, newLinks = c.handleToolCalls(msgs, resp.Message)
+			allFoundLinks = append(allFoundLinks, newLinks...)
 			continue
 		}
-		return c.parseFinalResponse(resp.Message.Content, art)
+		return c.parseFinalResponse(resp.Message.Content, art, allFoundLinks)
 	}
 }
 
 func (c *Client) buildChatRequest(messages []Message) ChatRequest {
-	return ChatRequest{
+	req := ChatRequest{
 		Model:     c.modelName,
 		Messages:  messages,
 		Stream:    false,
 		Format:    "json",
 		KeepAlive: 0,
 		Options:   map[string]interface{}{"temperature": c.temperature},
-		Tools:     []Tool{WebSearchTool},
 	}
+	if c.searcher != nil {
+		req.Tools = []Tool{WebSearchTool}
+	}
+	return req
 }
 
-func (c *Client) handleToolCalls(messages []Message, aiMessage Message) []Message {
+func (c *Client) handleToolCalls(messages []Message, aiMessage Message) ([]Message, []string) {
 	query := aiMessage.ToolCalls[0].Function.Arguments["query"].(string)
 	fmt.Printf("Searching: '%s'\n", query)
-
-	//PLACEHOLDER
-	mockResult := "Risultati finti per: " + query
-
+	var searchResults string
+	var links []string
+	if c.searcher != nil {
+		searchResults, links = c.searcher.Search(query)
+	} else {
+		searchResults = "Web Search disabled or Run out of Token"
+	}
 	messages = append(messages, aiMessage)
-	messages = append(messages, Message{Role: "tool", Content: mockResult})
-	return messages
+	messages = append(messages, Message{Role: "tool", Content: searchResults})
+	return messages, links
 }
 
-func (c *Client) parseFinalResponse(content string, art models.Article) (*models.Analysis, error) {
+func (c *Client) parseFinalResponse(content string, art models.Article, links []string) (*models.Analysis, error) {
 	var analysis models.Analysis
 	if err := json.Unmarshal([]byte(content), &analysis); err != nil {
 		return nil, fmt.Errorf("JSON non valido: %v", err)
 	}
 	analysis.AnalysisAt = time.Now()
 	analysis.Original = art
+	analysis.ReferenceLinks = links
 	return &analysis, nil
 }

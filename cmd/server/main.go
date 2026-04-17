@@ -14,6 +14,7 @@ import (
 	"fintracker/internal/ollama"
 	"fintracker/internal/pipeline"
 	"fintracker/internal/scraper"
+	"fintracker/internal/search"
 	"fintracker/internal/web"
 )
 
@@ -27,7 +28,11 @@ func main() {
 		log.Fatalf("Connection Db Error: %v", err)
 	}
 	fetcher := scraper.NewFetcher()
-	ai := ollama.NewClient(cfg.LLM.URL, cfg.LLM.Model, cfg.LLM.Temperature)
+	var tavilyClient ollama.Searcher
+	if cfg.Search.Enabled {
+		tavilyClient = search.NewTavilyClient(cfg.Search.TavilyAPIKey)
+	}
+	ai := ollama.NewClient(cfg.LLM.URL, cfg.LLM.Model, cfg.LLM.Temperature, tavilyClient)
 	appServer := web.NewAppServer(store)
 	worker := pipeline.NewWorker(cfg, fetcher, ai, store)
 	http.HandleFunc("/", appServer.HandleHome)

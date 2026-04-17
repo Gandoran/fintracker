@@ -15,6 +15,7 @@ CREATE TABLE analyses (
     sentiment TEXT NOT NULL,
     impact TEXT NOT NULL,
     tickers TEXT NOT NULL,
+    reference_links TEXT NOT NULL DEFAULT '',
     analyzed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
 );

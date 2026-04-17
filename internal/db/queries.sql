@@ -4,8 +4,8 @@ VALUES (?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: CreateAnalysis :one
-INSERT INTO analyses (article_id, summary, sentiment, impact, tickers)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO analyses (article_id, summary, sentiment, impact, tickers, reference_links)
+VALUES (?, ?, ?, ?, ?, ?)
 RETURNING *;
 
 -- name: GetRecentAnalyses :many

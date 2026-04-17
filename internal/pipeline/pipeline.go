@@ -66,11 +66,12 @@ func (w *Worker) processSingleArticle(art models.Article) {
 		return
 	}
 	_, err = w.store.CreateAnalysis(context.Background(), db.CreateAnalysisParams{
-		ArticleID: savedArticle.ID,
-		Summary:   analysis.Summary,
-		Sentiment: analysis.Sentiment,
-		Impact:    analysis.Impact,
-		Tickers:   strings.Join(analysis.Ticker, ", "),
+		ArticleID:      savedArticle.ID,
+		Summary:        analysis.Summary,
+		Sentiment:      analysis.Sentiment,
+		Impact:         analysis.Impact,
+		Tickers:        strings.Join(analysis.Ticker, ", "),
+		ReferenceLinks: strings.Join(analysis.ReferenceLinks, ","),
 	})
 	if err != nil {
 		log.Printf("Error saving on DB: %v", err)
