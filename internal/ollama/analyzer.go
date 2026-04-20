@@ -10,6 +10,8 @@ import (
 )
 
 func (c *Client) AnalyzeArticle(ctx context.Context, art models.Article) (*models.Analysis, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	messages := c.buildInitialMessages(art)
 	return c.processChatLoop(ctx, messages, art)
 }
@@ -79,4 +81,27 @@ func (c *Client) parseFinalResponse(content string, art models.Article, links []
 	analysis.Original = art
 	analysis.ReferenceLinks = links
 	return &analysis, nil
+}
+
+func (c *Client) ChatWithArticle(ctx context.Context, articleContent string, userQuestion string) (string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	sysPrompt := "Sei un assistente finanziario. Rispondi alla domanda dell'utente basandoti ESCLUSIVAMENTE sul testo dell'articolo fornito. Se la risposta non è nell'articolo, rispondi 'Non ho informazioni a riguardo'."
+	userPrompt := fmt.Sprintf("ARTICOLO:\n%s\n\nDOMANDA: %s", articleContent, userQuestion)
+
+	req := ChatRequest{
+		Model: c.modelName,
+		Messages: []Message{
+			{Role: "system", Content: sysPrompt},
+			{Role: "user", Content: userPrompt},
+		},
+		Stream:    false,
+		Format:    "",
+		KeepAlive: 0,
+	}
+	resp, err := c.doChatRequest(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return resp.Message.Content, nil
 }

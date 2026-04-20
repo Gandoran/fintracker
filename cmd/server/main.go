@@ -34,7 +34,7 @@ func main() {
 		tavilyClient = search.NewTavilyClient(cfg.Search.TavilyAPIKey)
 	}
 	ai := ollama.NewClient(cfg.LLM.URL, cfg.LLM.Model, cfg.LLM.Temperature, tavilyClient)
-	appServer := web.NewAppServer(store)
+	appServer := web.NewAppServer(store, ai)
 	mux := appServer.RegisterRoutes()
 	srv := &http.Server{Addr: ":8080", Handler: mux}
 	telegramBot := notifier.NewTelegramBot(cfg.Telegram.BotToken, cfg.Telegram.ChatID)

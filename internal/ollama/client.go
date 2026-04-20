@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sync"
 )
 
 type Searcher interface {
@@ -17,6 +18,7 @@ type Client struct {
 	temperature float32
 	httpClient  *http.Client
 	searcher    Searcher
+	mu          sync.Mutex
 }
 
 func NewClient(url, model string, temp float32, searcher Searcher) *Client {

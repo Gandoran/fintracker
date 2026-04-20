@@ -177,4 +177,8 @@ fintracker/
 ├── fintracker.db
 ├── go.mod
 └── sqlc.yaml
+<<<<<<< HEAD
 ```
+=======
+```
+>>>>>>> 4f18e1b (feat: aggiunto modalità di chat per interagire con l'IA sull'articolo selezionato)

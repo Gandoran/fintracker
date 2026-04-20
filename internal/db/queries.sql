@@ -27,3 +27,6 @@ WHERE articles.title LIKE '%' || ? || '%'
    OR analyses.tickers LIKE '%' || ? || '%'
 ORDER BY analyses.analyzed_at DESC
 LIMIT 30;
+
+-- name: GetArticleByID :one
+SELECT * FROM articles WHERE id = ? LIMIT 1;

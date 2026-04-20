@@ -87,6 +87,25 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 	return i, err
 }
 
+const getArticleByID = `-- name: GetArticleByID :one
+SELECT id, title, link, content, source, published_at, created_at FROM articles WHERE id = ? LIMIT 1
+`
+
+func (q *Queries) GetArticleByID(ctx context.Context, id int64) (Article, error) {
+	row := q.db.QueryRowContext(ctx, getArticleByID, id)
+	var i Article
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Link,
+		&i.Content,
+		&i.Source,
+		&i.PublishedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getRecentAnalyses = `-- name: GetRecentAnalyses :many
 SELECT 
     analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.reference_links, analyses.analyzed_at, analyses.reliability_score, 
