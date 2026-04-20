@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"fintracker/internal/db"
+	"fintracker/web/views"
 )
 
 type UIHandler struct {
@@ -17,29 +18,52 @@ func NewUiHandler(store *db.Store) *UIHandler {
 
 func (h *UIHandler) HandleHome(w http.ResponseWriter, r *http.Request) {
 	searchQuery := r.URL.Query().Get("q")
-	var results any
-	var err error
-	if searchQuery != "" {
-		res, dbErr := h.store.SearchAnalyses(r.Context(), db.SearchAnalysesParams{
+	dateQuery := r.URL.Query().Get("date")
+	var uiArticles []views.UIArticle
+	ctx := r.Context()
+	if dateQuery != "" {
+		rows, err := h.store.GetAnalysesByDate(ctx, dateQuery)
+		if err == nil {
+			for _, row := range rows {
+				uiArticles = append(uiArticles, mapToUI(row.Article, row.Analysis))
+			}
+		}
+	} else if searchQuery != "" {
+		rows, err := h.store.SearchAnalyses(ctx, db.SearchAnalysesParams{
 			Column1: sql.NullString{String: searchQuery, Valid: true},
 			Column2: sql.NullString{String: searchQuery, Valid: true},
 		})
-		results = res
-		err = dbErr
+		if err == nil {
+			for _, row := range rows {
+				uiArticles = append(uiArticles, mapToUI(row.Article, row.Analysis))
+			}
+		}
 	} else {
-		res, dbErr := h.store.GetRecentAnalyses(r.Context(), 30)
-		results = res
-		err = dbErr
+		rows, err := h.store.GetRecentAnalyses(ctx, 30)
+		if err == nil {
+			for _, row := range rows {
+				uiArticles = append(uiArticles, mapToUI(row.Article, row.Analysis))
+			}
+		}
 	}
-	if err != nil {
-		return
+	data := views.DashboardData{
+		SearchTerm:   searchQuery,
+		SelectedDate: dateQuery,
+		Analyses:     uiArticles,
 	}
-	data := struct {
-		SearchTerm string
-		Results    any
-	}{
-		SearchTerm: searchQuery,
-		Results:    results,
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	views.Dashboard(data).Render(r.Context(), w)
+}
+
+func mapToUI(art db.Article, an db.Analysis) views.UIArticle {
+	return views.UIArticle{
+		ID:               art.ID,
+		Title:            art.Title,
+		Tickers:          an.Tickers,
+		Sentiment:        an.Sentiment,
+		ReliabilityScore: an.ReliabilityScore,
+		Summary:          an.Summary,
+		Impact:           an.Impact,
+		AnalyzedAt:       an.AnalyzedAt.Time.Format("02/01/2006 15:04"),
 	}
-	tmpl.ExecuteTemplate(w, "base", data)
 }

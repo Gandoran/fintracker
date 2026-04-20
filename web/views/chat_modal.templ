@@ -1,0 +1,108 @@
+package views
+
+templ ChatModal() {
+	<div id="chatOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 transition-opacity"></div>
+
+	<div id="chatModal" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-2xl bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col h-[600px]">
+		
+		<div class="bg-slate-900 text-white p-4 flex justify-between items-center">
+			<div>
+				<h2 class="text-lg font-bold flex items-center gap-2">🤖 Assistente Lumina</h2>
+				<p id="chatArticleTitle" class="text-xs text-slate-300 truncate max-w-md mt-1">Titolo Articolo</p>
+			</div>
+			<button onclick="closeChat()" class="text-slate-300 hover:text-white text-2xl leading-none">&times;</button>
+		</div>
+
+		<div id="chatBox" class="flex-1 p-6 overflow-y-auto bg-slate-50 space-y-4">
+			<div class="bg-white border border-slate-200 rounded-lg p-3 inline-block max-w-[85%] text-slate-700 shadow-sm text-sm">
+				Ciao! Sono pronto a rispondere alle tue domande su questa notizia. Chiedimi pure!
+			</div>
+		</div>
+
+		<div class="p-4 bg-white border-t border-slate-200">
+			<form id="chatForm" onsubmit="sendMessage(event)" class="flex gap-2">
+				<input type="hidden" id="currentArticleId" value=""/>
+				<input type="text" id="chatInput" placeholder="Fai una domanda sull'articolo..." required
+					class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50"/>
+				<button type="submit" id="sendBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow transition disabled:opacity-50">
+					Invia
+				</button>
+			</form>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		function getEl(id) { return document.getElementById(id); }
+		function openChat(articleId, articleTitle) {
+			getEl('currentArticleId').value = articleId;
+			getEl('chatArticleTitle').innerText = articleTitle;
+			const chatBox = getEl('chatBox');
+			chatBox.innerHTML = '<div class="bg-white border border-slate-200 rounded-lg p-3 inline-block max-w-[85%] text-slate-700 shadow-sm text-sm">Ciao! Sono pronto a rispondere alle tue domande su questa notizia. Chiedimi pure!</div>';
+			getEl('chatOverlay').classList.remove('hidden');
+			getEl('chatModal').classList.remove('hidden');
+			getEl('chatInput').focus();
+		}
+
+		function closeChat() {
+			getEl('chatOverlay').classList.add('hidden');
+			getEl('chatModal').classList.add('hidden');
+		}
+		document.getElementById('chatOverlay').addEventListener('click', closeChat);
+
+		async function sendMessage(e) {
+			e.preventDefault();
+			const input = getEl('chatInput');
+			const sendBtn = getEl('sendBtn');
+			const question = input.value.trim();
+			const articleId = getEl('currentArticleId').value;
+			
+			if (!question) return;
+
+			appendMessage(question, 'user');
+			input.value = '';
+			sendBtn.disabled = true;
+
+			const loadingId = 'loading-' + Date.now();
+			appendMessage('Sto analizzando...', 'ai', loadingId);
+
+			try {
+				const response = await fetch('/api/chat', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						article_id: parseInt(articleId),
+						question: question
+					})
+				});
+
+				const data = await response.json();
+				getEl(loadingId).remove();
+				
+				if (!response.ok) throw new Error(data.error || 'Errore server');
+				
+				appendMessage(data.answer, 'ai');
+
+			} catch (error) {
+				getEl(loadingId).remove();
+				appendMessage('Scusa, c\'è stato un errore di connessione con l\'IA.', 'error');
+			} finally {
+				sendBtn.disabled = false;
+				input.focus();
+			}
+		}
+
+		function appendMessage(text, sender, id = null) {
+			const div = document.createElement('div');
+			div.className = sender === 'user' ? 'text-right' : 'text-left';
+			if (id) div.id = id;
+			const innerClass = sender === 'user' 
+				? 'bg-indigo-600 text-white rounded-l-xl rounded-tr-xl p-3 inline-block max-w-[85%] text-sm shadow-md'
+				: (sender === 'error' ? 'bg-red-100 text-red-700 border border-red-200 rounded-r-xl rounded-tl-xl p-3 inline-block max-w-[85%] text-sm' 
+				: 'bg-white border border-slate-200 text-slate-700 rounded-r-xl rounded-tl-xl p-3 inline-block max-w-[85%] text-sm shadow-sm whitespace-pre-wrap');
+			div.innerHTML = '<div class="' + innerClass + '">' + text + '</div>';
+			const chatBox = getEl('chatBox');
+			chatBox.appendChild(div);
+			chatBox.scrollTop = chatBox.scrollHeight;
+		}
+	</script>
+}

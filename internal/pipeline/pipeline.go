@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -28,59 +29,88 @@ func NewWorker(cfg *config.Config, f *scraper.Fetcher, ai *ollama.AnalyzerClient
 }
 
 func (w *Worker) Start() {
+	go w.runScraperLoop()
+	w.runAnalyzerLoop()
+}
+
+func (w *Worker) runScraperLoop() {
 	ticker := time.NewTicker(time.Duration(w.cfg.SCRAPER.IntervalMinutes) * time.Minute)
 	defer ticker.Stop()
+	w.fetchAndSave()
 	for {
-		log.Println("[PIPELINE] Finding new articles...")
-		w.processFeeds()
 		<-ticker.C
+		w.fetchAndSave()
 	}
 }
 
-func (w *Worker) processFeeds() {
+func (w *Worker) fetchAndSave() {
 	fetchCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	articles, err := w.fetcher.Fetch(fetchCtx, w.cfg.SCRAPER.Feeds)
 	if err != nil {
-		log.Printf("fetch Error: %v", err)
 		return
 	}
+	savedCount := 0
 	for _, art := range articles {
-		w.processSingleArticle(art)
-		time.Sleep(2 * time.Second) // Cooldown GPU
+		_, err := w.store.CreateArticle(context.Background(), db.CreateArticleParams{
+			Title:       art.Title,
+			Link:        art.Link,
+			Content:     art.Content,
+			Source:      art.Source,
+			PublishedAt: art.Published,
+		})
+
+		if err == nil {
+			savedCount++
+		}
 	}
 }
 
-func (w *Worker) processSingleArticle(art models.Article) {
-	savedArticle, err := w.store.CreateArticle(context.Background(), db.CreateArticleParams{
-		Title:       art.Title,
-		Link:        art.Link,
-		Content:     art.Content,
-		Source:      art.Source,
-		PublishedAt: art.Published,
-	})
-	if err != nil {
-		return
-	}
-	ollamaCtx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-	defer cancel()
-	analysis, err := w.ai.AnalyzeArticle(ollamaCtx, art)
-	if err != nil {
-		return
-	}
-	_, err = w.store.CreateAnalysis(context.Background(), db.CreateAnalysisParams{
-		ArticleID:        savedArticle.ID,
-		Summary:          analysis.Summary,
-		Sentiment:        analysis.Sentiment,
-		Impact:           analysis.Impact,
-		Tickers:          strings.Join(analysis.Ticker, ", "),
-		ReferenceLinks:   strings.Join(analysis.ReferenceLinks, ","),
-		ReliabilityScore: int64(analysis.Reliability),
-	})
-	if err != nil {
-		log.Printf("Error saving on DB: %v", err)
-	} else {
-		log.Println("Analys Saved")
+func (w *Worker) runAnalyzerLoop() {
+	for {
+		dbArt, err := w.store.GetNextPendingArticle(context.Background())
+		if err != nil {
+			if err == sql.ErrNoRows {
+				time.Sleep(10 * time.Second)
+				continue
+			}
+			time.Sleep(10 * time.Second)
+			continue
+		}
+		artModel := models.Article{
+			Title:   dbArt.Title,
+			Link:    dbArt.Link,
+			Content: dbArt.Content,
+			Source:  dbArt.Source,
+		}
+		ollamaCtx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		analysis, err := w.ai.AnalyzeArticle(ollamaCtx, artModel)
+		cancel()
+		if err != nil {
+			w.store.UpdateArticleStatus(context.Background(), db.UpdateArticleStatusParams{
+				Status: "FAILED",
+				ID:     dbArt.ID,
+			})
+			continue
+		}
+		_, err = w.store.CreateAnalysis(context.Background(), db.CreateAnalysisParams{
+			ArticleID:        dbArt.ID,
+			Summary:          analysis.Summary,
+			Sentiment:        analysis.Sentiment,
+			Impact:           analysis.Impact,
+			Tickers:          strings.Join(analysis.Ticker, ", "),
+			ReferenceLinks:   strings.Join(analysis.ReferenceLinks, ","),
+			ReliabilityScore: int64(analysis.Reliability),
+		})
+		if err != nil {
+			continue
+		}
+		w.store.UpdateArticleStatus(context.Background(), db.UpdateArticleStatusParams{
+			Status: "COMPLETED",
+			ID:     dbArt.ID,
+		})
+		w.SendTelegramNotify(analysis, &artModel)
+		time.Sleep(3 * time.Second)
 	}
 }
 

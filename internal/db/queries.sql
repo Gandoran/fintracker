@@ -30,3 +30,23 @@ LIMIT 30;
 
 -- name: GetArticleByID :one
 SELECT * FROM articles WHERE id = ? LIMIT 1;
+
+-- name: GetAnalysesByDate :many
+SELECT 
+    sqlc.embed(analyses), 
+    sqlc.embed(articles)
+FROM analyses
+JOIN articles ON analyses.article_id = articles.id
+WHERE DATE(analyses.analyzed_at) = DATE(?)
+ORDER BY analyses.analyzed_at DESC;
+
+-- name: GetNextPendingArticle :one
+SELECT * FROM articles 
+WHERE status = 'PENDING' 
+ORDER BY published_at ASC 
+LIMIT 1;
+
+-- name: UpdateArticleStatus :exec
+UPDATE articles 
+SET status = ? 
+WHERE id = ?;

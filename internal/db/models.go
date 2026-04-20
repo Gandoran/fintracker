@@ -29,4 +29,5 @@ type Article struct {
 	Source      string       `json:"source"`
 	PublishedAt time.Time    `json:"published_at"`
 	CreatedAt   sql.NullTime `json:"created_at"`
+	Status      string       `json:"status"`
 }

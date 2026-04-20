@@ -1,0 +1,90 @@
+package views
+
+import (
+	"strconv"
+)
+
+type UIArticle struct {
+	ID               int64
+	Title            string
+	Tickers          string
+	Sentiment        string
+	ReliabilityScore int64
+	Summary          string
+	Impact           string
+	AnalyzedAt       string
+}
+
+type DashboardData struct {
+	SearchTerm   string
+	SelectedDate string
+	Analyses     []UIArticle
+}
+
+templ Dashboard(data DashboardData) {
+	<!DOCTYPE html>
+	<html lang="it">
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Lumina Dashboard</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+	</head>
+	<body class="bg-slate-50 text-slate-800 font-sans p-8 relative">
+		<div class="max-w-5xl mx-auto">
+			<div class="flex justify-between items-center mb-8">
+				<h1 class="text-3xl font-bold text-slate-900 tracking-tight">Lumina <span class="text-blue-600">AI</span></h1>
+				<form action="/" method="GET" class="flex items-center space-x-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+					<input type="text" name="q" value={ data.SearchTerm } placeholder="Cerca ticker o titolo..." class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"/>
+					<input type="date" name="date" value={ data.SelectedDate } class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600"/>
+					<button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">Filtra</button>
+					if data.SearchTerm != "" || data.SelectedDate != "" {
+						<a href="/" class="text-slate-500 hover:text-slate-800 px-2 font-medium">Reset</a>
+					}
+				</form>
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+				if len(data.Analyses) == 0 {
+					<div class="col-span-full text-center py-12 bg-white border border-slate-200 rounded-xl text-slate-500">
+						Nessuna analisi trovata per i filtri selezionati.
+					</div>
+				} else {
+					for _, item := range data.Analyses {
+						@ArticleCard(item)
+					}
+				}
+			</div>
+		</div>@ChatModal()
+	</body>
+	</html>
+}
+
+templ ArticleCard(item UIArticle) {
+	<div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+		<div>
+			<h3 class="text-xl font-semibold mb-2">{ item.Title }</h3>
+			<div class="flex items-center flex-wrap gap-2 mb-4 text-sm">
+				<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono font-medium">{ item.Tickers }</span>
+				<span class="font-semibold text-slate-700">{ item.Sentiment }</span>
+				<span class="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md font-bold text-xs">
+					🎯 { formatInt(item.ReliabilityScore) }/10
+				</span>
+			</div>
+			<p class="text-slate-600 text-sm mb-4">{ item.Summary }</p>
+		</div>	
+		<div class="mt-4 pt-4 border-t border-slate-100 text-right flex justify-between items-center">
+			<span class="text-xs text-slate-400">Analizzato: { item.AnalyzedAt }</span>
+			<button onclick={ openChatJs(item.ID, item.Title) } class="text-indigo-600 hover:text-indigo-800 text-sm font-semibold transition flex items-center gap-1">
+				💬 Chiedi
+			</button>
+		</div>
+	</div>
+}
+
+func formatInt(n int64) string {
+	return strconv.FormatInt(n, 10)
+}
+
+script openChatJs(id int64, title string) {
+	openChat(id, title);
+}

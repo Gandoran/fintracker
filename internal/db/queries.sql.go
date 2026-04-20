@@ -55,7 +55,7 @@ func (q *Queries) CreateAnalysis(ctx context.Context, arg CreateAnalysisParams) 
 const createArticle = `-- name: CreateArticle :one
 INSERT INTO articles (title, link, content, source, published_at)
 VALUES (?, ?, ?, ?, ?)
-RETURNING id, title, link, content, source, published_at, created_at
+RETURNING id, title, link, content, source, published_at, created_at, status
 `
 
 type CreateArticleParams struct {
@@ -83,12 +83,69 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 		&i.Source,
 		&i.PublishedAt,
 		&i.CreatedAt,
+		&i.Status,
 	)
 	return i, err
 }
 
+const getAnalysesByDate = `-- name: GetAnalysesByDate :many
+SELECT 
+    analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.reference_links, analyses.analyzed_at, analyses.reliability_score, 
+    articles.id, articles.title, articles.link, articles.content, articles.source, articles.published_at, articles.created_at, articles.status
+FROM analyses
+JOIN articles ON analyses.article_id = articles.id
+WHERE DATE(analyses.analyzed_at) = DATE(?)
+ORDER BY analyses.analyzed_at DESC
+`
+
+type GetAnalysesByDateRow struct {
+	Analysis Analysis `json:"analysis"`
+	Article  Article  `json:"article"`
+}
+
+func (q *Queries) GetAnalysesByDate(ctx context.Context, date interface{}) ([]GetAnalysesByDateRow, error) {
+	rows, err := q.db.QueryContext(ctx, getAnalysesByDate, date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAnalysesByDateRow
+	for rows.Next() {
+		var i GetAnalysesByDateRow
+		if err := rows.Scan(
+			&i.Analysis.ID,
+			&i.Analysis.ArticleID,
+			&i.Analysis.Summary,
+			&i.Analysis.Sentiment,
+			&i.Analysis.Impact,
+			&i.Analysis.Tickers,
+			&i.Analysis.ReferenceLinks,
+			&i.Analysis.AnalyzedAt,
+			&i.Analysis.ReliabilityScore,
+			&i.Article.ID,
+			&i.Article.Title,
+			&i.Article.Link,
+			&i.Article.Content,
+			&i.Article.Source,
+			&i.Article.PublishedAt,
+			&i.Article.CreatedAt,
+			&i.Article.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getArticleByID = `-- name: GetArticleByID :one
-SELECT id, title, link, content, source, published_at, created_at FROM articles WHERE id = ? LIMIT 1
+SELECT id, title, link, content, source, published_at, created_at, status FROM articles WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetArticleByID(ctx context.Context, id int64) (Article, error) {
@@ -102,6 +159,30 @@ func (q *Queries) GetArticleByID(ctx context.Context, id int64) (Article, error)
 		&i.Source,
 		&i.PublishedAt,
 		&i.CreatedAt,
+		&i.Status,
+	)
+	return i, err
+}
+
+const getNextPendingArticle = `-- name: GetNextPendingArticle :one
+SELECT id, title, link, content, source, published_at, created_at, status FROM articles 
+WHERE status = 'PENDING' 
+ORDER BY published_at ASC 
+LIMIT 1
+`
+
+func (q *Queries) GetNextPendingArticle(ctx context.Context) (Article, error) {
+	row := q.db.QueryRowContext(ctx, getNextPendingArticle)
+	var i Article
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Link,
+		&i.Content,
+		&i.Source,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.Status,
 	)
 	return i, err
 }
@@ -109,7 +190,7 @@ func (q *Queries) GetArticleByID(ctx context.Context, id int64) (Article, error)
 const getRecentAnalyses = `-- name: GetRecentAnalyses :many
 SELECT 
     analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.reference_links, analyses.analyzed_at, analyses.reliability_score, 
-    articles.id, articles.title, articles.link, articles.content, articles.source, articles.published_at, articles.created_at
+    articles.id, articles.title, articles.link, articles.content, articles.source, articles.published_at, articles.created_at, articles.status
 FROM analyses
 JOIN articles ON analyses.article_id = articles.id
 ORDER BY analyses.analyzed_at DESC
@@ -147,6 +228,7 @@ func (q *Queries) GetRecentAnalyses(ctx context.Context, limit int64) ([]GetRece
 			&i.Article.Source,
 			&i.Article.PublishedAt,
 			&i.Article.CreatedAt,
+			&i.Article.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -164,7 +246,7 @@ func (q *Queries) GetRecentAnalyses(ctx context.Context, limit int64) ([]GetRece
 const searchAnalyses = `-- name: SearchAnalyses :many
 SELECT 
     analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.reference_links, analyses.analyzed_at, analyses.reliability_score, 
-    articles.id, articles.title, articles.link, articles.content, articles.source, articles.published_at, articles.created_at
+    articles.id, articles.title, articles.link, articles.content, articles.source, articles.published_at, articles.created_at, articles.status
 FROM analyses
 JOIN articles ON analyses.article_id = articles.id
 WHERE articles.title LIKE '%' || ? || '%' 
@@ -209,6 +291,7 @@ func (q *Queries) SearchAnalyses(ctx context.Context, arg SearchAnalysesParams) 
 			&i.Article.Source,
 			&i.Article.PublishedAt,
 			&i.Article.CreatedAt,
+			&i.Article.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -221,4 +304,20 @@ func (q *Queries) SearchAnalyses(ctx context.Context, arg SearchAnalysesParams) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateArticleStatus = `-- name: UpdateArticleStatus :exec
+UPDATE articles 
+SET status = ? 
+WHERE id = ?
+`
+
+type UpdateArticleStatusParams struct {
+	Status string `json:"status"`
+	ID     int64  `json:"id"`
+}
+
+func (q *Queries) UpdateArticleStatus(ctx context.Context, arg UpdateArticleStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateArticleStatus, arg.Status, arg.ID)
+	return err
 }
