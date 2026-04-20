@@ -1,7 +1,9 @@
 llm:
-  model: "gemma4:e4b"
-  url: "http://localhost:11434/api/chat"
-  temperature: 0.1
+  url: "http://localhost:11434"
+  daemon_model: "gemma2"
+  chat_model: "llama3.2:1b"
+  daemon_temperature: 0.1
+  chat_temperature: 0.5
 
 scraper:
   interval_minutes: 15

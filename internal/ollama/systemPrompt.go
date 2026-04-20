@@ -17,3 +17,5 @@ Il tuo JSON deve avere questa struttura esatta:
   "impact": "Possibile impatto sui mercati (aggiornato col contesto web)"
   "reliability_score": 8
 }`
+
+const SystemPromptChat = `Sei un assistente finanziario conciso. Rispondi alla domanda dell'utente usando SOLO le informazioni presenti in questo articolo. Rispondi in italiano.`

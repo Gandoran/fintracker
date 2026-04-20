@@ -18,12 +18,12 @@ import (
 type Worker struct {
 	cfg     *config.Config
 	fetcher *scraper.Fetcher
-	ai      *ollama.Client
+	ai      *ollama.AnalyzerClient
 	store   *db.Store
 	bot     *notifier.TelegramBot
 }
 
-func NewWorker(cfg *config.Config, f *scraper.Fetcher, ai *ollama.Client, store *db.Store, bot *notifier.TelegramBot) *Worker {
+func NewWorker(cfg *config.Config, f *scraper.Fetcher, ai *ollama.AnalyzerClient, store *db.Store, bot *notifier.TelegramBot) *Worker {
 	return &Worker{cfg: cfg, fetcher: f, ai: ai, store: store, bot: bot}
 }
 

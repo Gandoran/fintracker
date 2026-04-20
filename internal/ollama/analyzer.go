@@ -9,25 +9,25 @@ import (
 	"fintracker/internal/models"
 )
 
-func (c *Client) AnalyzeArticle(ctx context.Context, art models.Article) (*models.Analysis, error) {
+func (c *AnalyzerClient) AnalyzeArticle(ctx context.Context, art models.Article) (*models.Analysis, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	messages := c.buildInitialMessages(art)
 	return c.processChatLoop(ctx, messages, art)
 }
 
-func (c *Client) buildInitialMessages(art models.Article) []Message {
+func (c *AnalyzerClient) buildInitialMessages(art models.Article) []Message {
 	return []Message{
 		{Role: "system", Content: SystemPromptFinancial},
 		{Role: "user", Content: fmt.Sprintf("Titolo: %s\nContenuto: %s", art.Title, art.Content)},
 	}
 }
 
-func (c *Client) processChatLoop(ctx context.Context, msgs []Message, art models.Article) (*models.Analysis, error) {
+func (c *AnalyzerClient) processChatLoop(ctx context.Context, msgs []Message, art models.Article) (*models.Analysis, error) {
 	var allFoundLinks []string
 	for {
 		req := c.buildChatRequest(msgs)
-		resp, err := c.doChatRequest(ctx, req)
+		resp, err := doChatRequest(ctx, c.httpClient, c.baseURL, req)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func (c *Client) processChatLoop(ctx context.Context, msgs []Message, art models
 	}
 }
 
-func (c *Client) buildChatRequest(messages []Message) ChatRequest {
+func (c *AnalyzerClient) buildChatRequest(messages []Message) ChatRequest {
 	req := ChatRequest{
 		Model:     c.modelName,
 		Messages:  messages,
@@ -57,7 +57,7 @@ func (c *Client) buildChatRequest(messages []Message) ChatRequest {
 	return req
 }
 
-func (c *Client) handleToolCalls(messages []Message, aiMessage Message) ([]Message, []string) {
+func (c *AnalyzerClient) handleToolCalls(messages []Message, aiMessage Message) ([]Message, []string) {
 	query := aiMessage.ToolCalls[0].Function.Arguments["query"].(string)
 	fmt.Printf("Searching: '%s'\n", query)
 	var searchResults string
@@ -72,7 +72,7 @@ func (c *Client) handleToolCalls(messages []Message, aiMessage Message) ([]Messa
 	return messages, links
 }
 
-func (c *Client) parseFinalResponse(content string, art models.Article, links []string) (*models.Analysis, error) {
+func (c *AnalyzerClient) parseFinalResponse(content string, art models.Article, links []string) (*models.Analysis, error) {
 	var analysis models.Analysis
 	if err := json.Unmarshal([]byte(content), &analysis); err != nil {
 		return nil, fmt.Errorf("JSON non valido: %v", err)
@@ -81,27 +81,4 @@ func (c *Client) parseFinalResponse(content string, art models.Article, links []
 	analysis.Original = art
 	analysis.ReferenceLinks = links
 	return &analysis, nil
-}
-
-func (c *Client) ChatWithArticle(ctx context.Context, articleContent string, userQuestion string) (string, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	sysPrompt := "Sei un assistente finanziario. Rispondi alla domanda dell'utente basandoti ESCLUSIVAMENTE sul testo dell'articolo fornito. Se la risposta non è nell'articolo, rispondi 'Non ho informazioni a riguardo'."
-	userPrompt := fmt.Sprintf("ARTICOLO:\n%s\n\nDOMANDA: %s", articleContent, userQuestion)
-
-	req := ChatRequest{
-		Model: c.modelName,
-		Messages: []Message{
-			{Role: "system", Content: sysPrompt},
-			{Role: "user", Content: userPrompt},
-		},
-		Stream:    false,
-		Format:    "",
-		KeepAlive: 0,
-	}
-	resp, err := c.doChatRequest(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	return resp.Message.Content, nil
 }

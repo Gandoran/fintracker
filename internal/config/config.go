@@ -10,10 +10,11 @@ import (
 
 type Config struct {
 	LLM struct {
-		Model       string  `yaml:"model"`
-		URL         string  `yaml:"url"`
-		Temperature float32 `yaml:"temperature"`
-		//TODO aggiungere gestione token
+		URL               string  `yaml:"url"`
+		DaemonModel       string  `yaml:"daemon_model"`
+		ChatModel         string  `yaml:"chat_model"`
+		DaemonTemperature float32 `yaml:"daemon_temperature"`
+		ChatTemperature   float32 `yaml:"chat_temperature"`
 	} `yaml:"llm"`
 
 	SCRAPER struct {

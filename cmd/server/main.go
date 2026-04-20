@@ -33,12 +33,13 @@ func main() {
 	if cfg.Search.Enabled {
 		tavilyClient = search.NewTavilyClient(cfg.Search.TavilyAPIKey)
 	}
-	ai := ollama.NewClient(cfg.LLM.URL, cfg.LLM.Model, cfg.LLM.Temperature, tavilyClient)
-	appServer := web.NewAppServer(store, ai)
+	aiAnalyzer := ollama.NewAnalyzerClient(cfg.LLM.URL, cfg.LLM.DaemonModel, cfg.LLM.DaemonTemperature, tavilyClient)
+	aiChat := ollama.NewChatClient(cfg.LLM.URL, cfg.LLM.ChatModel, cfg.LLM.ChatTemperature)
+	appServer := web.NewAppServer(store, aiChat)
 	mux := appServer.RegisterRoutes()
 	srv := &http.Server{Addr: ":8080", Handler: mux}
 	telegramBot := notifier.NewTelegramBot(cfg.Telegram.BotToken, cfg.Telegram.ChatID)
-	worker := pipeline.NewWorker(cfg, fetcher, ai, store, telegramBot)
+	worker := pipeline.NewWorker(cfg, fetcher, aiAnalyzer, store, telegramBot)
 	go func() {
 		log.Println("FinTracker Active on http://localhost:8080")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
