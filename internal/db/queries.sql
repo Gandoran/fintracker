@@ -50,3 +50,17 @@ LIMIT 1;
 UPDATE articles 
 SET status = ? 
 WHERE id = ?;
+
+-- name: GetActiveSources :many
+SELECT * FROM sources 
+WHERE is_active = 1;
+
+-- name: DisableSource :exec
+UPDATE sources 
+SET is_active = 0 
+WHERE id = ?;
+
+-- name: IncrementSourceError :exec
+UPDATE sources 
+SET error_count = error_count + 1 
+WHERE id = ?;

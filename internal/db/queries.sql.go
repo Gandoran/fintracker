@@ -88,6 +88,53 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 	return i, err
 }
 
+const disableSource = `-- name: DisableSource :exec
+UPDATE sources 
+SET is_active = 0 
+WHERE id = ?
+`
+
+func (q *Queries) DisableSource(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, disableSource, id)
+	return err
+}
+
+const getActiveSources = `-- name: GetActiveSources :many
+SELECT id, name, url, category, is_active, error_count, created_at FROM sources 
+WHERE is_active = 1
+`
+
+func (q *Queries) GetActiveSources(ctx context.Context) ([]Source, error) {
+	rows, err := q.db.QueryContext(ctx, getActiveSources)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Source
+	for rows.Next() {
+		var i Source
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Url,
+			&i.Category,
+			&i.IsActive,
+			&i.ErrorCount,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAnalysesByDate = `-- name: GetAnalysesByDate :many
 SELECT 
     analyses.id, analyses.article_id, analyses.summary, analyses.sentiment, analyses.impact, analyses.tickers, analyses.reference_links, analyses.analyzed_at, analyses.reliability_score, 
@@ -241,6 +288,17 @@ func (q *Queries) GetRecentAnalyses(ctx context.Context, limit int64) ([]GetRece
 		return nil, err
 	}
 	return items, nil
+}
+
+const incrementSourceError = `-- name: IncrementSourceError :exec
+UPDATE sources 
+SET error_count = error_count + 1 
+WHERE id = ?
+`
+
+func (q *Queries) IncrementSourceError(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, incrementSourceError, id)
+	return err
 }
 
 const searchAnalyses = `-- name: SearchAnalyses :many

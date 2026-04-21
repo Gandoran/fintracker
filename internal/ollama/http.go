@@ -5,11 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 func doChatRequest(ctx context.Context, httpClient *http.Client, baseURL string, reqData ChatRequest) (*ChatResponse, error) {
 	jsonData, _ := json.Marshal(reqData)
-	req, _ := http.NewRequestWithContext(ctx, "POST", baseURL, bytes.NewReader(jsonData))
+	cleanBase := strings.TrimRight(baseURL, "/")
+	endpoint := cleanBase
+	if !strings.HasSuffix(cleanBase, "/api/chat") {
+		endpoint = cleanBase + "/api/chat"
+	}
+	req, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := httpClient.Do(req)
 	if err != nil {

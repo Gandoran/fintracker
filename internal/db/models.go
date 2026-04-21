@@ -31,3 +31,13 @@ type Article struct {
 	CreatedAt   sql.NullTime `json:"created_at"`
 	Status      string       `json:"status"`
 }
+
+type Source struct {
+	ID         int64          `json:"id"`
+	Name       string         `json:"name"`
+	Url        string         `json:"url"`
+	Category   sql.NullString `json:"category"`
+	IsActive   bool           `json:"is_active"`
+	ErrorCount int64          `json:"error_count"`
+	CreatedAt  sql.NullTime   `json:"created_at"`
+}

@@ -28,7 +28,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Connection Db Error: %v", err)
 	}
-	fetcher := scraper.NewFetcher()
+	fetcher := scraper.NewFetcher(http.DefaultClient)
 	var tavilyClient ollama.Searcher
 	if cfg.Search.Enabled {
 		tavilyClient = search.NewTavilyClient(cfg.Search.TavilyAPIKey)

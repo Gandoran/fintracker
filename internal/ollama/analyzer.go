@@ -10,8 +10,6 @@ import (
 )
 
 func (c *AnalyzerClient) AnalyzeArticle(ctx context.Context, art models.Article) (*models.Analysis, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
 	messages := c.buildInitialMessages(art)
 	return c.processChatLoop(ctx, messages, art)
 }
@@ -24,6 +22,7 @@ func (c *AnalyzerClient) buildInitialMessages(art models.Article) []Message {
 }
 
 func (c *AnalyzerClient) processChatLoop(ctx context.Context, msgs []Message, art models.Article) (*models.Analysis, error) {
+	//fi qui arriva
 	var allFoundLinks []string
 	for {
 		req := c.buildChatRequest(msgs)

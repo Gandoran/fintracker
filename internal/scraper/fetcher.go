@@ -3,9 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"strings"
-	"time"
+	"net/http"
 
 	"fintracker/internal/models"
 
@@ -13,12 +11,16 @@ import (
 )
 
 type Fetcher struct {
-	parser *gofeed.Parser
+	parser     *gofeed.Parser
+	httpClient *http.Client
 }
 
-func NewFetcher() *Fetcher {
+func NewFetcher(client *http.Client) *Fetcher {
+	fp := gofeed.NewParser()
+	fp.Client = client
 	return &Fetcher{
-		parser: gofeed.NewParser(),
+		parser:     fp,
+		httpClient: client,
 	}
 }
 
@@ -30,36 +32,7 @@ func (f *Fetcher) Fetch(ctx context.Context, urls []string) ([]models.Article, e
 			fmt.Printf("Error on %s: %v\n", url, err)
 			continue
 		}
-		allArticles = append(allArticles, f.parseFeed(feed)...)
+		allArticles = append(allArticles, f.parseFeed(ctx, feed)...)
 	}
 	return allArticles, nil
-}
-
-func (f *Fetcher) parseFeed(feed *gofeed.Feed) []models.Article {
-	var articles []models.Article
-	for _, item := range feed.Items {
-		rawText := item.Description
-		if item.Content != "" {
-			rawText = item.Content
-		}
-		pubDate := time.Now()
-		if item.PublishedParsed != nil {
-			pubDate = *item.PublishedParsed
-		}
-		articles = append(articles, models.Article{
-			Title:     sanitizeText(item.Title),
-			Link:      item.Link,
-			Content:   sanitizeText(rawText),
-			Published: pubDate,
-			Source:    feed.Title,
-		})
-	}
-	return articles
-}
-
-func sanitizeText(htmlStr string) string {
-	re := regexp.MustCompile(`<[^>]*>`)
-	cleaned := re.ReplaceAllString(htmlStr, " ")
-	cleaned = strings.Join(strings.Fields(cleaned), " ")
-	return cleaned
 }
