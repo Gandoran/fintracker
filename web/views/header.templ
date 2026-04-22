@@ -1,0 +1,29 @@
+package views
+
+templ Header(searchTerm string, selectedDate string) {
+	<div class="flex justify-between items-center mb-8">
+		<h1 class="text-3xl font-bold text-slate-900 tracking-tight">
+			Lumina <span class="text-blue-600">AI</span>
+		</h1>
+		<div class="flex items-center space-x-6">
+			<form action="/" method="GET" class="flex items-center space-x-3 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+				<input type="text" name="q" value={ searchTerm } placeholder="Cerca ticker o titolo..." class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-48"/>
+				<input type="date" name="date" value={ selectedDate } class="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-600"/>
+				<button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">Filtra</button>
+				if searchTerm != "" || selectedDate != "" {
+					<a href="/" class="text-slate-500 hover:text-slate-800 px-2 font-medium">Reset</a>
+				}
+			</form>
+			<div class="flex items-center space-x-2 border-l border-slate-300 pl-6">
+				<button onclick="openDiscoveryModal()" class="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-4 py-2 rounded-xl font-semibold transition flex items-center shadow-sm">
+					Trova Feed
+				</button>
+				<form action="/admin/clean-queue" method="POST" onsubmit="return confirm('Sei sicuro di voler eliminare tutti gli articoli in coda da analizzare?');">
+					<button type="submit" class="bg-red-100 text-red-800 hover:bg-red-200 px-4 py-2 rounded-xl font-semibold transition flex items-center shadow-sm">
+					    Svuota Coda
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}

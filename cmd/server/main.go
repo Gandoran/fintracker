@@ -35,7 +35,7 @@ func main() {
 	}
 	aiAnalyzer := ollama.NewAnalyzerClient(cfg.LLM.URL, cfg.LLM.DaemonModel, cfg.LLM.DaemonTemperature, tavilyClient)
 	aiChat := ollama.NewChatClient(cfg.LLM.URL, cfg.LLM.ChatModel, cfg.LLM.ChatTemperature)
-	appServer := web.NewAppServer(store, aiChat)
+	appServer := web.NewAppServer(store, aiChat, fetcher)
 	mux := appServer.RegisterRoutes()
 	srv := &http.Server{Addr: ":8080", Handler: mux}
 	telegramBot := notifier.NewTelegramBot(cfg.Telegram.BotToken, cfg.Telegram.ChatID)

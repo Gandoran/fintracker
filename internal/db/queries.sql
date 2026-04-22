@@ -64,3 +64,22 @@ WHERE id = ?;
 UPDATE sources 
 SET error_count = error_count + 1 
 WHERE id = ?;
+
+-- name: CreateSource :one
+INSERT INTO sources (name, url, category)
+VALUES (?, ?, ?)
+RETURNING *;
+
+-- name: GetAllSources :many
+SELECT * FROM sources 
+ORDER BY name ASC;
+
+-- name: DeleteSource :exec
+DELETE FROM sources 
+WHERE id = ?;
+
+--DEBUG TODO REMOVE
+
+-- name: DeleteAllPendingArticles :exec
+DELETE FROM articles 
+WHERE status = 'PENDING';

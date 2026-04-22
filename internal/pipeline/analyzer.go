@@ -13,6 +13,7 @@ import (
 
 func (w *Worker) processNextPendingArticle() bool {
 	dbArt, err := w.store.GetNextPendingArticle(context.Background())
+	fmt.Printf("Token usati dall'articolo: %v\n", float64(len(dbArt.Content))/4)
 	if err != nil {
 		return false
 	}
@@ -37,7 +38,7 @@ func (w *Worker) processNextPendingArticle() bool {
 		Summary:          analysis.Summary,
 		Sentiment:        analysis.Sentiment,
 		Impact:           analysis.Impact,
-		Tickers:          strings.Join(analysis.Ticker, ", "),
+		Tickers:          strings.Join(analysis.Ticker, ","),
 		ReferenceLinks:   strings.Join(analysis.ReferenceLinks, ","),
 		ReliabilityScore: int64(analysis.Reliability),
 	})

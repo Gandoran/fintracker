@@ -88,6 +88,55 @@ func (q *Queries) CreateArticle(ctx context.Context, arg CreateArticleParams) (A
 	return i, err
 }
 
+const createSource = `-- name: CreateSource :one
+INSERT INTO sources (name, url, category)
+VALUES (?, ?, ?)
+RETURNING id, name, url, category, is_active, error_count, created_at
+`
+
+type CreateSourceParams struct {
+	Name     string         `json:"name"`
+	Url      string         `json:"url"`
+	Category sql.NullString `json:"category"`
+}
+
+func (q *Queries) CreateSource(ctx context.Context, arg CreateSourceParams) (Source, error) {
+	row := q.db.QueryRowContext(ctx, createSource, arg.Name, arg.Url, arg.Category)
+	var i Source
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Url,
+		&i.Category,
+		&i.IsActive,
+		&i.ErrorCount,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const deleteAllPendingArticles = `-- name: DeleteAllPendingArticles :exec
+DELETE FROM articles 
+WHERE status = 'PENDING'
+`
+
+func (q *Queries) DeleteAllPendingArticles(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteAllPendingArticles)
+	return err
+}
+
+const deleteSource = `-- name: DeleteSource :exec
+
+DELETE FROM sources 
+WHERE id = ?
+`
+
+// DEBBUGING PURPOSE TO REMOVE
+func (q *Queries) DeleteSource(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteSource, id)
+	return err
+}
+
 const disableSource = `-- name: DisableSource :exec
 UPDATE sources 
 SET is_active = 0 
@@ -106,6 +155,42 @@ WHERE is_active = 1
 
 func (q *Queries) GetActiveSources(ctx context.Context) ([]Source, error) {
 	rows, err := q.db.QueryContext(ctx, getActiveSources)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Source
+	for rows.Next() {
+		var i Source
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Url,
+			&i.Category,
+			&i.IsActive,
+			&i.ErrorCount,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAllSources = `-- name: GetAllSources :many
+SELECT id, name, url, category, is_active, error_count, created_at FROM sources 
+ORDER BY name ASC
+`
+
+func (q *Queries) GetAllSources(ctx context.Context) ([]Source, error) {
+	rows, err := q.db.QueryContext(ctx, getAllSources)
 	if err != nil {
 		return nil, err
 	}

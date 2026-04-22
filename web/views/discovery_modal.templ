@@ -1,0 +1,120 @@
+package views
+
+import "fintracker/internal/db"
+
+type UISource struct {
+	ID   int64
+	Name string
+	URL  string
+}
+
+templ DiscoveryModal(sources []db.Source) {
+	<div id="discoveryOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40"></div>
+	<div id="discoveryModal" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-3xl bg-white rounded-2xl shadow-2xl z-50 flex flex-col max-h-[85vh]">
+		<div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+			<h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">Gestione Fonti RSS</h2>
+			<button onclick="closeDiscoveryModal()" class="text-slate-400 hover:text-slate-600 text-3xl">&times;</button>
+		</div>
+		<div class="flex-1 overflow-y-auto p-6 space-y-8">
+			<section>
+				<h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Aggiungi Nuova Testata</h3>
+				<div class="flex gap-2">
+					<input type="url" id="discoveryUrl" placeholder="Inserisci dominio (es: bloomberg.com)" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"/>
+					<button onclick="discoverFeeds()" id="discoverBtn" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition">
+						Scansiona
+					</button>
+				</div>
+				<div id="discoveryResults" class="mt-4 space-y-2"></div>
+			</section>
+			<section>
+				<h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Fonti Attive ({ formatInt(int64(len(sources))) })</h3>
+				<div class="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden">
+					if len(sources) == 0 {
+						<div class="p-8 text-center text-slate-400 italic">Nessun feed configurato.</div>
+					} else {
+						for _, s := range sources {
+							<div class="p-4 flex justify-between items-center hover:bg-slate-50 transition">
+								<div>
+									<div class="font-bold text-slate-800">{ s.Name }</div>
+									<div class="text-xs text-slate-500 font-mono truncate max-w-md">{ s.Url }</div>
+								</div>
+								<form action="/feed/delete-source" method="POST" onsubmit="return confirm('Eliminare questa fonte?');">
+									<input type="hidden" name="id" value={ formatInt(s.ID) }/>
+									<button type="submit" class="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition">
+										🗑️
+									</button>
+								</form>
+							</div>
+						}
+					}
+				</div>
+			</section>
+		</div>
+	</div>
+
+<script type="text/javascript">
+		function openDiscoveryModal() {
+			document.getElementById('discoveryOverlay').classList.remove('hidden');
+			document.getElementById('discoveryModal').classList.remove('hidden');
+		}
+		function closeDiscoveryModal() {
+			document.getElementById('discoveryOverlay').classList.add('hidden');
+			document.getElementById('discoveryModal').classList.add('hidden');
+		}
+		async function discoverFeeds() {
+			const url = document.getElementById('discoveryUrl').value;
+			const btn = document.getElementById('discoverBtn');
+			const resultsDiv = document.getElementById('discoveryResults');
+			if(!url) return;
+			btn.disabled = true;
+			btn.innerText = "Ricerca...";
+			resultsDiv.innerHTML = "";
+			try {
+				const resp = await fetch("/feed/discover?url=" + encodeURIComponent(url));
+				const feeds = await resp.json();
+				if (!feeds || feeds.length === 0) {
+					resultsDiv.innerHTML = "<div class='text-amber-600 text-sm font-semibold p-2'>Nessun feed trovato (oppure il sito blocca i bot).</div>";
+					return;
+				}
+				feeds.forEach(f => {
+					const card = document.createElement('div');
+					card.className = "flex items-center justify-between p-3 bg-emerald-50 border border-emerald-100 rounded-lg mt-2";
+					const textDiv = document.createElement('div');
+					textDiv.className = "truncate mr-4";
+					textDiv.innerHTML = `<div class="text-sm font-bold text-emerald-900">${f.Title || 'Feed RSS'}</div>
+										 <div class="text-xs text-emerald-700 truncate">${f.URL}</div>`;
+					const addBtn = document.createElement('button');
+					addBtn.className = "bg-emerald-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-emerald-700";
+					addBtn.innerText = "Aggiungi";
+					addBtn.onclick = () => addSource(f.URL, f.Title || 'Feed Generico');
+					card.appendChild(textDiv);
+					card.appendChild(addBtn);
+					resultsDiv.appendChild(card);
+				});
+			} catch(e) {
+				resultsDiv.innerHTML = "<div class='text-red-600 text-sm'>Errore di connessione.</div>";
+			} finally {
+				btn.disabled = false;
+				btn.innerText = "Scansiona";
+			}
+		}
+		async function addSource(url, name) {
+			console.log("Invio dati al server:", {url, name});
+			try {
+				const resp = await fetch("/feed/add-source", {
+					method: "POST",
+					headers: {"Content-Type": "application/json"},
+					body: JSON.stringify({ url: url, name: name })
+				});
+				if(resp.ok) {
+					window.location.reload();
+				} else {
+					const errText = await resp.text();
+					alert("Errore salvataggio: " + errText);
+				}
+			} catch(e) {
+				alert("Errore di rete durante il salvataggio.");
+			}
+		}
+	</script>
+}

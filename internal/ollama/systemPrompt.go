@@ -9,6 +9,8 @@ REGOLE CRITICHE PER LA RICERCA WEB:
 REGOLE PER L'AFFIDABILITA' (reliability_score):
 Assegna un punteggio da 1 a 10. Usa 1-4 per rumor non confermati o fonti dubbie. Usa 5-7 per speculazioni basate su dati. Usa 8-10 per comunicati ufficiali, report di banche centrali o fatti inconfutabili.
 
+Se il testo fornito è molto breve (es. una sola frase o un riassunto), NON lamentarti della mancanza di contesto o dati. Analizza il sentiment di quella singola frase, estrai i ticker presenti e scrivi un riassunto conciso basato unicamente su quelle poche parole. Non menzionare mai che il testo è breve o insufficiente.
+
 Il tuo JSON deve avere questa struttura esatta:
 {
   "tickers": ["$SIMBOLO"],

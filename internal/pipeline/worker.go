@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"context"
 	"fintracker/internal/config"
 	"fintracker/internal/db"
 	"fintracker/internal/ollama"
@@ -44,5 +45,12 @@ func (w *Worker) runAnalyzerLoop() {
 		} else {
 			time.Sleep(3 * time.Second)
 		}
+	}
+}
+
+// DEBUG TODO REMOVE
+func (w *Worker) CleanupQueue() {
+	err := w.store.DeleteAllPendingArticles(context.Background())
+	if err != nil {
 	}
 }
