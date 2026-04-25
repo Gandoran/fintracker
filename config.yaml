@@ -7,6 +7,7 @@ llm:
 
 scraper:
   interval_minutes: 15
+  chromedp_path: "C:\Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
 
 search:
   enabled: false

@@ -3,8 +3,6 @@ package scraper
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
 	"regexp"
 )
@@ -15,24 +13,26 @@ type FeedLink struct {
 }
 
 func (f *Fetcher) DiscoverRSS(ctx context.Context, baseURL string) ([]FeedLink, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", baseURL, nil)
-	if err != nil {
-		return nil, err
+	if knownFeeds := f.checkKnownHosts(baseURL); len(knownFeeds) > 0 {
+		return knownFeeds, nil
 	}
-	addHeader(req)
-	resp, err := f.httpClient.Do(req)
-	if err != nil {
-		return nil, err
+	html, status := f.fetchHTMLFast(ctx, baseURL)
+	if status == 200 && html != "" {
+		links := f.findLinksInHTML(html, baseURL)
+		if len(links) > 0 {
+			return links, nil
+		}
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Unable to access the page %d", resp.StatusCode)
+	if status == 403 || status == 429 || status == 401 || status == 503 || len(html) < 1000 {
+		html = f.fetchHTMLSlow(ctx, baseURL)
+		if html != "" {
+			links := f.findLinksInHTML(html, baseURL)
+			if len(links) > 0 {
+				return links, nil
+			}
+		}
 	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return f.findLinksInHTML(string(body), baseURL), nil
+	return []FeedLink{}, nil
 }
 
 func (f *Fetcher) findLinksInHTML(html, baseStr string) []FeedLink {
@@ -49,10 +49,7 @@ func (f *Fetcher) findLinksInHTML(html, baseStr string) []FeedLink {
 		u, err := url.Parse(href)
 		if err == nil {
 			absoluteURL := base.ResolveReference(u).String()
-			found = append(found, FeedLink{
-				Title: title,
-				URL:   absoluteURL,
-			})
+			found = append(found, FeedLink{Title: title, URL: absoluteURL})
 		}
 	}
 	return found
@@ -65,15 +62,4 @@ func extractAttribute(tag, attr string) string {
 		return match[1]
 	}
 	return ""
-}
-
-func addHeader(req *http.Request) {
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Upgrade-Insecure-Requests", "1")
-	req.Header.Set("Sec-Fetch-Dest", "document")
-	req.Header.Set("Sec-Fetch-Mode", "navigate")
-	req.Header.Set("Sec-Fetch-Site", "none")
-	req.Header.Set("Sec-Fetch-User", "?1")
 }

@@ -18,8 +18,8 @@ type Config struct {
 	} `yaml:"llm"`
 
 	SCRAPER struct {
-		IntervalMinutes int      `yaml:"interval_minutes"`
-		Feeds           []string `yaml:"feeds"`
+		IntervalMinutes int    `yaml:"interval_minutes"`
+		chromedpPath    string `yaml:"chromedp_path"`
 	} `yaml:"scraper"`
 
 	Search struct {

@@ -2,32 +2,29 @@ package scraper
 
 import (
 	"context"
-	"net/http"
+	"net/url"
 	"strings"
-	"time"
 
 	"github.com/go-shiori/go-readability"
 )
 
 func (f *Fetcher) extractFullArticle(ctx context.Context, articleURL string) string {
-	reqCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-	req, err := http.NewRequestWithContext(reqCtx, "GET", articleURL, nil)
-	if err != nil {
+	html, status := f.fetchHTMLFast(ctx, articleURL)
+	testo := f.parseHTMLToArticle(html, articleURL)
+	if status == 200 && testo != "" {
+		return testo
+	}
+	html = f.fetchHTMLSlow(ctx, articleURL)
+	testo = f.parseHTMLToArticle(html, articleURL)
+	return testo
+}
+
+func (f *Fetcher) parseHTMLToArticle(html string, articleURL string) string {
+	if html == "" {
 		return ""
 	}
-	req.Header.Set("Accept-Language", "en-US,en;q=0.9,it;q=0.8")
-	req.Header.Set("Referer", "https://www.google.com/")
-	req.Header.Set("Connection", "keep-alive")
-	resp, err := f.httpClient.Do(req)
-	if err != nil {
-		return ""
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return ""
-	}
-	article, err := readability.FromReader(resp.Body, req.URL)
+	parsedURL, _ := url.Parse(articleURL)
+	article, err := readability.FromReader(strings.NewReader(html), parsedURL)
 	if err != nil {
 		return ""
 	}
