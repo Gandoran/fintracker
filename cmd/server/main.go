@@ -19,6 +19,7 @@ import (
 	"fintracker/web"
 )
 
+// TODO REFACTOR DECENTE
 func main() {
 	cfg, err := config.Load("config.yaml")
 	if err != nil {
@@ -35,7 +36,7 @@ func main() {
 	}
 	aiAnalyzer := ollama.NewAnalyzerClient(cfg.LLM.URL, cfg.LLM.DaemonModel, cfg.LLM.DaemonTemperature, tavilyClient)
 	aiChat := ollama.NewChatClient(cfg.LLM.URL, cfg.LLM.ChatModel, cfg.LLM.ChatTemperature)
-	appServer := web.NewAppServer(store, aiChat, fetcher)
+	appServer := web.NewAppServer(store, aiChat, fetcher, cfg.LLM.URL)
 	mux := appServer.RegisterRoutes()
 	srv := &http.Server{Addr: ":8080", Handler: mux}
 	telegramBot := notifier.NewTelegramBot(cfg.Telegram.BotToken, cfg.Telegram.ChatID)

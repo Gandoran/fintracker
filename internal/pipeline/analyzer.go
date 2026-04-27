@@ -11,6 +11,7 @@ import (
 	"fintracker/internal/models"
 )
 
+// TODO REFACTOR
 func (w *Worker) processNextPendingArticle() bool {
 	dbArt, err := w.store.GetNextPendingArticle(context.Background())
 	fmt.Printf("Token usati dall'articolo: %v\n", float64(len(dbArt.Content))/4)
