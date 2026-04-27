@@ -17,14 +17,36 @@ templ DiscoveryModal(sources []db.Source) {
 		</div>
 		<div class="flex-1 overflow-y-auto p-6 space-y-8">
 			<section>
-				<h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Aggiungi Nuova Testata</h3>
+				<div class="flex items-center gap-2 mb-4">
+					<h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider">Aggiungi Nuova Testata</h3>
+					
+					<div class="relative group cursor-help">
+						<div class="bg-slate-200 text-slate-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold group-hover:bg-emerald-500 group-hover:text-white transition">?</div>
+						<div class="absolute left-0 top-6 mt-1 w-72 p-4 bg-slate-800 text-slate-100 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+							<div class="font-bold text-emerald-400 mb-2">Feed Consigliati</div>
+							<div class="mt-2 flex flex-wrap gap-1 font-mono text-emerald-200">
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">ilsole24ore.com</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">wallstreetitalia.com</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">finanzaonline.com</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">finance.yahoo</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">cnbc.com</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">repubblica.it</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">corriere.it</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">techcrunch.com</span>
+								<span class="bg-slate-700 px-1.5 py-0.5 rounded">wired.it</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				
 				<div class="flex gap-2">
-					<input type="url" id="discoveryUrl" placeholder="Inserisci dominio (es: bloomberg.com)" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"/>
+					<input type="url" id="discoveryUrl" placeholder="Es: bloomberg.com oppure 'yahoo'" 
+						class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50"/>
 					<button onclick="discoverFeeds()" id="discoverBtn" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition">
 						Scansiona
 					</button>
 				</div>
-				<div id="discoveryResults" class="mt-4 space-y-2"></div>
+				<div id="discoveryResults" class="mt-4 space-y-2 mb-8"></div>
 			</section>
 			<section>
 				<h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Fonti Attive ({ formatInt(int64(len(sources))) })</h3>

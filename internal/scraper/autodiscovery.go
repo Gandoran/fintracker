@@ -13,9 +13,6 @@ type FeedLink struct {
 }
 
 func (f *Fetcher) DiscoverRSS(ctx context.Context, baseURL string) ([]FeedLink, error) {
-	if knownFeeds := f.checkKnownHosts(baseURL); len(knownFeeds) > 0 {
-		return knownFeeds, nil
-	}
 	html, status := f.fetchHTMLFast(ctx, baseURL)
 	if status == 200 && html != "" {
 		links := f.findLinksInHTML(html, baseURL)

@@ -37,14 +37,14 @@ func DiscoveryModal(sources []db.Source) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"discoveryOverlay\" class=\"hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40\"></div><div id=\"discoveryModal\" class=\"hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-3xl bg-white rounded-2xl shadow-2xl z-50 flex flex-col max-h-[85vh]\"><div class=\"p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl\"><h2 class=\"text-2xl font-bold text-slate-800 flex items-center gap-2\">Gestione Fonti RSS</h2><button onclick=\"closeDiscoveryModal()\" class=\"text-slate-400 hover:text-slate-600 text-3xl\">&times;</button></div><div class=\"flex-1 overflow-y-auto p-6 space-y-8\"><section><h3 class=\"text-sm font-bold text-slate-400 uppercase tracking-wider mb-4\">Aggiungi Nuova Testata</h3><div class=\"flex gap-2\"><input type=\"url\" id=\"discoveryUrl\" placeholder=\"Inserisci dominio (es: bloomberg.com)\" class=\"flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50\"> <button onclick=\"discoverFeeds()\" id=\"discoverBtn\" class=\"bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition\">Scansiona</button></div><div id=\"discoveryResults\" class=\"mt-4 space-y-2\"></div></section><section><h3 class=\"text-sm font-bold text-slate-400 uppercase tracking-wider mb-4\">Fonti Attive (")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"discoveryOverlay\" class=\"hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40\"></div><div id=\"discoveryModal\" class=\"hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-3xl bg-white rounded-2xl shadow-2xl z-50 flex flex-col max-h-[85vh]\"><div class=\"p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-2xl\"><h2 class=\"text-2xl font-bold text-slate-800 flex items-center gap-2\">Gestione Fonti RSS</h2><button onclick=\"closeDiscoveryModal()\" class=\"text-slate-400 hover:text-slate-600 text-3xl\">&times;</button></div><div class=\"flex-1 overflow-y-auto p-6 space-y-8\"><section><div class=\"flex items-center gap-2 mb-4\"><h3 class=\"text-sm font-bold text-slate-400 uppercase tracking-wider\">Aggiungi Nuova Testata</h3><div class=\"relative group cursor-help\"><div class=\"bg-slate-200 text-slate-500 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold group-hover:bg-emerald-500 group-hover:text-white transition\">?</div><div class=\"absolute left-0 top-6 mt-1 w-72 p-4 bg-slate-800 text-slate-100 text-xs rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50\"><div class=\"font-bold text-emerald-400 mb-2\">Feed Consigliati</div><div class=\"mt-2 flex flex-wrap gap-1 font-mono text-emerald-200\"><span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">ilsole24ore.com</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">wallstreetitalia.com</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">finanzaonline.com</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">finance.yahoo</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">cnbc.com</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">repubblica.it</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">corriere.it</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">techcrunch.com</span> <span class=\"bg-slate-700 px-1.5 py-0.5 rounded\">wired.it</span></div></div></div></div><div class=\"flex gap-2\"><input type=\"url\" id=\"discoveryUrl\" placeholder=\"Es: bloomberg.com oppure 'yahoo'\" class=\"flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-slate-50\"> <button onclick=\"discoverFeeds()\" id=\"discoverBtn\" class=\"bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition\">Scansiona</button></div><div id=\"discoveryResults\" class=\"mt-4 space-y-2 mb-8\"></div></section><section><h3 class=\"text-sm font-bold text-slate-400 uppercase tracking-wider mb-4\">Fonti Attive (")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(formatInt(int64(len(sources))))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 30, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 52, Col: 125}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -68,7 +68,7 @@ func DiscoveryModal(sources []db.Source) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(s.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 38, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 60, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -81,7 +81,7 @@ func DiscoveryModal(sources []db.Source) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(s.Url)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 39, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 61, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -94,7 +94,7 @@ func DiscoveryModal(sources []db.Source) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(formatInt(s.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 42, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/discovery_modal.templ`, Line: 64, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {

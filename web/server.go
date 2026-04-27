@@ -5,6 +5,8 @@ import (
 
 	"fintracker/internal/db"
 	"fintracker/internal/scraper"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type AppServer struct {
@@ -28,6 +30,7 @@ func (s *AppServer) RegisterRoutes() *http.ServeMux {
 	mux.HandleFunc("/feed/discover", s.feedHandler.HandleDiscover)
 	mux.HandleFunc("/feed/add-source", s.feedHandler.HandleAddSource)
 	mux.HandleFunc("/feed/delete-source", s.feedHandler.HandleDeleteSource)
+	mux.Handle("/metrics", promhttp.Handler())
 	//DEBUG TODO REMOVE
 	mux.HandleFunc("/admin/clean-queue", s.dashboardHandler.HandleCleanQueue)
 	return mux

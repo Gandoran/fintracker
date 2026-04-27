@@ -29,10 +29,8 @@ func (f *Fetcher) fetchHTMLSlow(ctx context.Context, targetURL string) string {
 		chromedp.OuterHTML(`html`, &htmlContent),
 	)
 	if err != nil {
-		log.Printf("⚠️ [SLOW SCRAPER] Errore navigazione su %s: %v", targetURL, err)
+		log.Printf("[SLOW SCRAPER] Navigation error on %s: %v", targetURL, err)
 		return ""
 	}
 	return htmlContent
 }
-
-//For test: https://www.theverge.com
